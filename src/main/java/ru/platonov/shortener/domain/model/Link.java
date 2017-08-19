@@ -3,6 +3,7 @@ package ru.platonov.shortener.domain.model;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,6 +39,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@EqualsAndHashCode(of = "id")
 @Entity
 @Table(name = "LINKS", indexes = @Index(name = "IDX_SHORT_URL", columnList = "SHORT_URL"))
 public class Link implements Serializable {
@@ -60,6 +62,7 @@ public class Link implements Serializable {
     @Min(301)
     @Max(302)
     @Column(name = "REDIRECT_TYPE", nullable = false)
+    @Builder.Default
     private Integer redirectType = HttpStatus.FOUND.value();
 
     @Column(name = "REDIRECTS_AMOUNT", nullable = false)

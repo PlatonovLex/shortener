@@ -36,6 +36,8 @@ public class LinkService {
 
     private static final int MIN_COUNT = 6; //maximum 20358520 combinations
 
+    private int MAX_RETRY_COUNT = 10;
+
     @Autowired
     private AccountRepository accountRepository;
 
@@ -68,8 +70,16 @@ public class LinkService {
                 .build();
 
         link.setUrl(linkRequest.getUrl());
+        String generatedUrl;
+        int retry = 0;
 
-        String generatedUrl = RandomStringUtils.randomAlphabetic(MIN_COUNT);
+        do {
+            if(retry >= MAX_RETRY_COUNT) {
+                throw new IllegalStateException("Maximum retry reached!");
+            }
+            retry ++;
+            generatedUrl = RandomStringUtils.randomAlphabetic(MIN_COUNT);
+        } while (linkRepository.findLinkByShortUrl(generatedUrl).isPresent());
 
         link.setShortUrl(generatedUrl);
         link.setRedirectType(linkRequest.getRedirectType());

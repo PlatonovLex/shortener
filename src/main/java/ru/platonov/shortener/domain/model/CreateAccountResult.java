@@ -32,8 +32,12 @@ public class CreateAccountResult {
     @JsonProperty("password")
     private String password;
 
-    public static Builder builder() {
-        return new Builder();
+    public static PasswordStep forSuccess() {
+        return new Builder().forSuccess();
+    }
+
+    public static DescriptionStep forError() {
+        return new Builder().forError();
     }
 
     public interface ResultStep {

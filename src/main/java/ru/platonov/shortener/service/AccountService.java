@@ -35,7 +35,7 @@ public class AccountService {
 
         if (accountRepository.exists(accountIdTrimmed)) {
 
-            return CreateAccountResult.builder()
+            return CreateAccountResult
                     .forError()
                     .withDescription("account with that ID already exists")
                     .build();
@@ -48,7 +48,7 @@ public class AccountService {
 
         Account savedAccount = accountRepository.save(account);
 
-        return CreateAccountResult.builder().forSuccess()
+        return CreateAccountResult.forSuccess()
                 .withPassword(savedAccount.getPassword())
                 .build();
     }

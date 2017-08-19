@@ -277,7 +277,8 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
         assertTrue(response.isEmpty());
     }
 
-    @Test(dependsOnMethods = {"should_returnPassword_when_registerAccount",
+    @Test(groups = "RestApiSlowTests.call_short_link",
+            dependsOnMethods = {"should_returnPassword_when_registerAccount",
             "should_returnShortLink_when_registerLinkWithRedirect"})
     public void should_redirect301_when_linkRegistered() throws IOException {
         HttpUriRequest request = new HttpGet(registered301ShortUrl);
@@ -329,4 +330,5 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
         assertEquals(response.get(REDIRECT_GOOGLE).intValue(), 1);
         assertEquals(response.get(REDIRECT_JETBRAINS).intValue(), 2);
     }
+
 }
