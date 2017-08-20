@@ -26,4 +26,13 @@ public interface LinkRepository extends CrudRepository<Link, Long>{
      */
     Optional<Link> findLinkByShortUrl(String shortUrl);
 
+    /**
+     * Get link associated with specified account by real link
+     *
+     * @param url        real link
+     * @param accountId  associated account
+     * @return link object
+     */
+    Optional<Link> findLinkByUrlAndAccount_Id(String url, String accountId);
+
 }

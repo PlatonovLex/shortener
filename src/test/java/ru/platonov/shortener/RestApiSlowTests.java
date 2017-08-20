@@ -27,6 +27,7 @@ import ru.platonov.shortener.domain.repository.LinkRepository;
 import ru.platonov.shortener.model.ErrorResponse;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,6 +97,7 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
 
         assertTrue(StringUtils.isNotBlank(password));
         accountPassword = password;
+
     }
 
     @Test(dependsOnMethods = "should_returnPassword_when_registerAccount")
@@ -153,12 +155,51 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
 
     @Test(dependsOnMethods = "should_returnPassword_when_registerAccount")
     public void should_returnShortLink_when_registerLinkWithRedirect() throws IOException {
+        HttpMethodExecutor.MethodResponse<RegisterLinkResult> methodResponse =
+                registerLinkWithRedirect();
+
+        assertTrue(methodResponse.isSuccess());
+        RegisterLinkResult response = methodResponse.getResponse();
+
+        checkResponse(response);
+
+        registered301ShortUrl = response.getShortUrl();
+    }
+
+    @Test(dependsOnMethods = "should_returnPassword_when_registerAccount")
+    public void should_returnSameShortLink_when_registerLinkWithRedirectTwice() throws IOException {
+        HttpMethodExecutor.MethodResponse<RegisterLinkResult> methodResponse =
+                registerLinkWithRedirect();
+
+        assertTrue(methodResponse.isSuccess());
+        RegisterLinkResult response = methodResponse.getResponse();
+
+        checkResponse(response);
+
+        HttpMethodExecutor.MethodResponse<RegisterLinkResult> secondMethodResponse =
+                registerLinkWithRedirect();
+
+        assertTrue(secondMethodResponse.isSuccess());
+        RegisterLinkResult secondResponse = methodResponse.getResponse();
+
+        checkResponse(secondResponse);
+
+        assertEquals(response.getShortUrl(), secondResponse.getShortUrl());
+    }
+
+    private void checkResponse(RegisterLinkResult response) throws MalformedURLException {
+        assertNotNull(response);
+        assertNotNull(response.getShortUrl());
+        assertEquals(new URL(response.getShortUrl()).getHost(), domainConfig.getName());
+    }
+
+    private HttpMethodExecutor.MethodResponse<RegisterLinkResult> registerLinkWithRedirect() throws IOException {
         RegisterLinkRequest registerLinkRequest = new RegisterLinkRequest();
 
         registerLinkRequest.setRedirectType(HttpStatus.SC_MOVED_PERMANENTLY);
         registerLinkRequest.setUrl(REDIRECT_GOOGLE);
 
-        HttpMethodExecutor.MethodResponse<RegisterLinkResult> methodResponse = HttpMethodExecutor.builder()
+        return HttpMethodExecutor.builder()
                 .basicAuthEnabled(true)
                 .userName(TEST_ACCOUNT_ID)
                 .password(accountPassword)
@@ -167,14 +208,6 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
                 .executePostJson(URL_REGISTER,
                         registerLinkRequest, RegisterLinkResult.class);
 
-        assertTrue(methodResponse.isSuccess());
-        RegisterLinkResult response = methodResponse.getResponse();
-
-        assertNotNull(response);
-        assertNotNull(response.getShortUrl());
-        assertEquals(new URL(response.getShortUrl()).getHost(), domainConfig.getName());
-
-        registered301ShortUrl = response.getShortUrl();
     }
 
     @Test(dependsOnMethods = "should_returnPassword_when_registerAccount")

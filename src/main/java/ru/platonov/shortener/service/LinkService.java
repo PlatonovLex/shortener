@@ -63,13 +63,34 @@ public class LinkService {
             throw new IllegalStateException(errorMsg);
         }
 
+        String trimmedUrl = linkRequest.getUrl().trim();
+
+        Optional<Link> linkByUrlAndAccountId =
+                linkRepository.findLinkByUrlAndAccount_Id(trimmedUrl, accountId);
+
+        if (linkByUrlAndAccountId.isPresent()) {
+            Link savedLink = linkByUrlAndAccountId.get();
+
+            return RegisterLinkResult.builder()
+                    .shortUrl(getFullUrl(savedLink.getShortUrl()))
+                    .build();
+        }
+
         Link link = Link.builder()
-                .url(linkRequest.getUrl().trim())
-                .shortUrl(RandomStringUtils.randomAlphabetic(MIN_COUNT))
+                .url(trimmedUrl)
+                .shortUrl(createShortUrl())
                 .redirectType(linkRequest.getRedirectType())
+                .account(account)
                 .build();
 
-        link.setUrl(linkRequest.getUrl());
+        Link savedLink = linkRepository.save(link);
+
+        return RegisterLinkResult.builder()
+                .shortUrl(getFullUrl(savedLink.getShortUrl()))
+                .build();
+    }
+
+    private String createShortUrl(){
         String generatedUrl;
         int retry = 0;
 
@@ -81,15 +102,7 @@ public class LinkService {
             generatedUrl = RandomStringUtils.randomAlphabetic(MIN_COUNT);
         } while (linkRepository.findLinkByShortUrl(generatedUrl).isPresent());
 
-        link.setShortUrl(generatedUrl);
-        link.setRedirectType(linkRequest.getRedirectType());
-        link.setAccount(account);
-
-        Link savedLink = linkRepository.save(link);
-
-        return RegisterLinkResult.builder()
-                .shortUrl(getFullUrl(savedLink.getShortUrl()))
-                .build();
+        return generatedUrl;
     }
 
     private String getFullUrl(String generatedPath) {
