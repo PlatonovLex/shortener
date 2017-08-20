@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,6 +47,7 @@ public class Account implements UserDetails{
     private static final long serialVersionUID = 3229401993955277416L;
 
     @Id
+    @NotBlank
     @Column(name = "ID", nullable = false, unique = true, updatable = false)
     private String id;
 

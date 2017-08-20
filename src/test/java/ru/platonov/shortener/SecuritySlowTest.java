@@ -38,7 +38,8 @@ import static org.testng.Assert.assertTrue;
  */
 @SpringBootTest(webEnvironment = DEFINED_PORT)
 public class SecuritySlowTest extends AbstractTestNGSpringContextTests {
-    public static final int CHARS_COUNT = 6;
+    private static final int CHARS_COUNT = 6;
+
     private static CloseableHttpClient httpClient;
 
     @Autowired
@@ -78,14 +79,14 @@ public class SecuritySlowTest extends AbstractTestNGSpringContextTests {
         assertEquals(methodResponse.getErrorResponse().getStatus(), Integer.valueOf(HttpStatus.SC_UNAUTHORIZED));
     }
 
-    private HttpMethodExecutor.MethodResponse<RegisterLinkResult> executeMethod(
+    private static HttpMethodExecutor.MethodResponse<RegisterLinkResult> executeMethod(
             Consumer<HttpMethodExecutor> setUpBasicAuthorization) throws IOException {
         String accountId = RandomStringUtils.randomAlphabetic(CHARS_COUNT);
         String accountPassword = getNewAccountPassword(accountId);
 
         RegisterLinkRequest registerLinkRequest = new RegisterLinkRequest();
 
-        registerLinkRequest.setUrl("yandex.ru/test");
+        registerLinkRequest.setUrl("http://google.com/test");
         HttpMethodExecutor httpMethodExecutor = new HttpMethodExecutor(httpClient);
 
         httpMethodExecutor.setBasicAuthEnabled(true);
@@ -112,7 +113,7 @@ public class SecuritySlowTest extends AbstractTestNGSpringContextTests {
 
     }
 
-    private String getNewAccountPassword(String accountId) throws IOException {
+    private static String getNewAccountPassword(String accountId) throws IOException {
         CreateAccountRequest createAccountRequest = new CreateAccountRequest();
 
         createAccountRequest.setAccountId(accountId);

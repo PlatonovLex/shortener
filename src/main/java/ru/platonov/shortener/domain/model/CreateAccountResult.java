@@ -1,6 +1,8 @@
 package ru.platonov.shortener.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,17 +21,21 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
+@ApiModel(description = "Result for creation account")
 public class CreateAccountResult {
 
     @NonNull
     @JsonProperty("success")
+    @ApiModelProperty(value = "action result", example = "true", required = true)
     private Boolean success;
 
     @NonNull
     @JsonProperty("description")
+    @ApiModelProperty(value = "result description", example = "Your account is opened", required = true)
     private String description;
 
     @JsonProperty("password")
+    @ApiModelProperty(value = "created password for account", example = "XCb78")
     private String password;
 
     public static PasswordStep forSuccess() {
@@ -38,12 +44,6 @@ public class CreateAccountResult {
 
     public static DescriptionStep forError() {
         return new Builder().forError();
-    }
-
-    public interface ResultStep {
-        PasswordStep forSuccess();
-
-        BuildWithDescriptionStep forError();
     }
 
     public interface PasswordStep {
@@ -64,7 +64,7 @@ public class CreateAccountResult {
     /**
      * Typical step builder
      */
-    public static class Builder implements ResultStep, PasswordStep, DescriptionStep {
+    public static class Builder implements PasswordStep, DescriptionStep {
         private Boolean success;
         private String description;
         private String password;
@@ -72,14 +72,12 @@ public class CreateAccountResult {
         private Builder() {
         }
 
-        @Override
         public PasswordStep forSuccess() {
             success = Boolean.TRUE;
             description = "Your account is opened";
             return this;
         }
 
-        @Override
         public DescriptionStep forError() {
             success = Boolean.FALSE;
             return this;

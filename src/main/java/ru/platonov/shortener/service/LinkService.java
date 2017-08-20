@@ -14,10 +14,10 @@ import ru.platonov.shortener.domain.model.RegisterLinkRequest;
 import ru.platonov.shortener.domain.model.RegisterLinkResult;
 import ru.platonov.shortener.domain.repository.AccountRepository;
 import ru.platonov.shortener.domain.repository.LinkRepository;
+import ru.platonov.shortener.exceptions.ResourceNotFoundException;
 import ru.platonov.shortener.spring.RetryConcurrentOperation;
 
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,7 +36,7 @@ public class LinkService {
 
     private static final int MIN_COUNT = 6; //maximum 20358520 combinations
 
-    private int MAX_RETRY_COUNT = 10;
+    private static final int MAX_RETRY_COUNT = 100;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -118,7 +118,7 @@ public class LinkService {
         Account account = accountRepository.findOne(accountId);
 
         if (account == null) {
-            return Collections.emptyMap();
+            throw new ResourceNotFoundException("Statistic for User not found");
         }
 
         return account.getLinks()

@@ -7,17 +7,23 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import ru.platonov.shortener.config.DomainConfig;
 import ru.platonov.shortener.domain.model.CreateAccountRequest;
 import ru.platonov.shortener.domain.model.CreateAccountResult;
+import ru.platonov.shortener.domain.model.Link;
 import ru.platonov.shortener.domain.model.RegisterLinkRequest;
 import ru.platonov.shortener.domain.model.RegisterLinkResult;
+import ru.platonov.shortener.domain.repository.LinkRepository;
 import ru.platonov.shortener.model.ErrorResponse;
 
 import java.io.IOException;
@@ -41,6 +47,7 @@ import static org.testng.Assert.assertTrue;
  * @since 16.08.2017
  */
 @SpringBootTest(webEnvironment = DEFINED_PORT)
+@Test(groups = "RestApiSlowTests")
 public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
 
     private static final String URL_ACCOUNT = "http://localhost:8080:/account";
@@ -66,6 +73,11 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
     @AfterClass
     public static void destroy() throws IOException {
         httpClient.close();
+    }
+
+    @AfterMethod
+    public void clean() {
+        Mockito.reset(linkRepositoryMock);
     }
 
     @Test
@@ -108,7 +120,7 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
         assertEquals(errorResponse.getStatus(), Integer.valueOf(HttpStatus.SC_BAD_REQUEST));
         assertEquals(errorResponse.getErrors().size(), 1);
         assertEquals(errorResponse.getErrors().get(0).getField(), "url");
-        assertEquals(errorResponse.getErrors().get(0).getCode(), "NotEmpty");
+        assertEquals(errorResponse.getErrors().get(0).getCode(), "NotBlank");
 
     }
 
@@ -236,7 +248,7 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
         assertEquals(errorResponse.getStatus(), Integer.valueOf(HttpStatus.SC_BAD_REQUEST));
         assertEquals(errorResponse.getErrors().size(), 1);
         assertEquals(errorResponse.getErrors().get(0).getField(), "accountId");
-        assertEquals(errorResponse.getErrors().get(0).getCode(), "NotEmpty");
+        assertEquals(errorResponse.getErrors().get(0).getCode(), "NotBlank");
 
     }
 
@@ -271,14 +283,15 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
                         .executeGetMethod(
                                 URL_STATISTIC + "notExists", HashMap.class);
 
-        assertTrue(methodResponse.isSuccess());
-        HashMap<String, Long> response = methodResponse.getResponse();
+        assertFalse(methodResponse.isSuccess());
+        ErrorResponse errorResponse = methodResponse.getErrorResponse();
 
-        assertTrue(response.isEmpty());
+        assertEquals(errorResponse.getStatus().intValue(), HttpStatus.SC_NOT_FOUND);
+        assertEquals(errorResponse.getError(), "Not Found");
+
     }
 
-    @Test(groups = "RestApiSlowTests.call_short_link",
-            dependsOnMethods = {"should_returnPassword_when_registerAccount",
+    @Test(dependsOnMethods = {"should_returnPassword_when_registerAccount",
             "should_returnShortLink_when_registerLinkWithRedirect"})
     public void should_redirect301_when_linkRegistered() throws IOException {
         HttpUriRequest request = new HttpGet(registered301ShortUrl);
@@ -329,6 +342,53 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
 
         assertEquals(response.get(REDIRECT_GOOGLE).intValue(), 1);
         assertEquals(response.get(REDIRECT_JETBRAINS).intValue(), 2);
+    }
+
+    @Autowired
+    private LinkRepository linkRepositoryMock;
+
+    @Test(dependsOnMethods = {"should_returnPassword_when_registerAccount",
+            "should_returnShortLink_when_registerLinkWithRedirect"})
+    public void should_attemptMaximumRetries_when_optimisticException() throws IOException {
+        Mockito.doThrow(new ObjectOptimisticLockingFailureException("Link.class", "hey"))
+                .when(linkRepositoryMock).save(Matchers.any(Link.class));
+
+        HttpMethodExecutor.MethodResponse<Void> methodResponse =
+                HttpMethodExecutor.builder()
+                        .httpClient(httpClient)
+                        .basicAuthEnabled(true)
+                        .userName(TEST_ACCOUNT_ID)
+                        .password(accountPassword)
+                        .build()
+                        .executeGetMethod(
+                                registered301ShortUrl, Void.class);
+
+        ErrorResponse errorResponse = methodResponse.getErrorResponse();
+
+        assertEquals(errorResponse.getStatus().intValue(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        assertEquals(errorResponse.getException(), "org.springframework.orm.ObjectOptimisticLockingFailureException");
+    }
+
+    @Test(dependsOnMethods = {"should_returnPassword_when_registerAccount",
+            "should_returnShortLink_when_registerLinkWithRedirect"})
+    public void should_interceptorRetrunException_when_repositoryThrowExcpetion() throws IOException {
+        Mockito.doThrow(new IllegalArgumentException("test"))
+                .when(linkRepositoryMock).save(Matchers.any(Link.class));
+
+        HttpMethodExecutor.MethodResponse<Void> methodResponse =
+                HttpMethodExecutor.builder()
+                        .httpClient(httpClient)
+                        .basicAuthEnabled(true)
+                        .userName(TEST_ACCOUNT_ID)
+                        .password(accountPassword)
+                        .build()
+                        .executeGetMethod(
+                                registered301ShortUrl, Void.class);
+
+        ErrorResponse errorResponse = methodResponse.getErrorResponse();
+
+        assertEquals(errorResponse.getStatus().intValue(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        assertEquals(errorResponse.getException(), "org.springframework.dao.InvalidDataAccessApiUsageException");
     }
 
 }

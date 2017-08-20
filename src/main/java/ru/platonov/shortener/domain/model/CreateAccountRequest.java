@@ -1,10 +1,12 @@
 package ru.platonov.shortener.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.NotBlank;
 
 import javax.validation.Valid;
 
@@ -20,11 +22,13 @@ import javax.validation.Valid;
 @Getter
 @Setter
 @ToString
+@ApiModel(description = "Request for creation account")
 public class CreateAccountRequest {
 
     @Valid
-    @NotEmpty
+    @NotBlank
     @JsonProperty("AccountId")
+    @ApiModelProperty(value = "User account id", example = "myAccount", required = true)
     private String accountId;
 
 }

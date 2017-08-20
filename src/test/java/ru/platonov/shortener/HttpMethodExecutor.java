@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class HttpMethodExecutor {
+class HttpMethodExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpMethodExecutor.class);
 
@@ -54,7 +54,7 @@ public class HttpMethodExecutor {
 
     private String password;
 
-    public HttpMethodExecutor(CloseableHttpClient httpClient) {
+    HttpMethodExecutor(CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
     }
 
@@ -68,7 +68,7 @@ public class HttpMethodExecutor {
      * @return                  response structure
      * @throws IOException      if json parsing fails
      */
-    public  <T> MethodResponse<T> executePostJson(
+    <T> MethodResponse<T> executePostJson(
             String uri, Object requestObject, Class<T> responseClass) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] bytes = objectMapper.writeValueAsBytes(requestObject);
@@ -93,7 +93,7 @@ public class HttpMethodExecutor {
      * @return                  response structure
      * @throws IOException      if json parsing fails
      */
-    public <T> MethodResponse<T> executeGetMethod(String uri, Class<T> responseClass) throws IOException {
+    <T> MethodResponse<T> executeGetMethod(String uri, Class<T> responseClass) throws IOException {
         HttpGet request = new HttpGet(uri);
 
         setBasicAuthHeader(request);
@@ -104,8 +104,9 @@ public class HttpMethodExecutor {
             HttpUriRequest request, ObjectMapper objectMapper, Class<T> responseClass) throws IOException {
         try(CloseableHttpResponse response = httpClient.execute(request)) {
             MethodResponse<T> objectMethodResponse = new MethodResponse<>();
+            int statusCode = response.getStatusLine().getStatusCode();
 
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_CREATED) {
                 objectMethodResponse.setErrorResponse(
                         objectMapper.readValue(response.getEntity().getContent(), ErrorResponse.class));
 
