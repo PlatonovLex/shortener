@@ -319,8 +319,8 @@ public class RestApiSlowTests extends AbstractTestNGSpringContextTests {
         assertFalse(methodResponse.isSuccess());
         ErrorResponse errorResponse = methodResponse.getErrorResponse();
 
-        assertEquals(errorResponse.getStatus().intValue(), HttpStatus.SC_NOT_FOUND);
-        assertEquals(errorResponse.getError(), "Not Found");
+        assertEquals(errorResponse.getStatus().intValue(), HttpStatus.SC_FORBIDDEN);
+        assertEquals(errorResponse.getError(), "Forbidden");
 
     }
 
