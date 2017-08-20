@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * ApplicationRestController.
@@ -98,6 +100,7 @@ public class ApplicationRestController {
             @ApiResponse(code = 200, message = "Successful execution"),
             @ApiResponse(code = 401, message = "You are not authenticated"),
             @ApiResponse(code = 404, message = "Account not found"),
+            @ApiResponse(code = 403, message = "Not enough rights"),
     })
     @ApiOperation(value = "Get usage statistic for account", notes = "Response consists of Map with String and Long params, " +
             "where String - url, and Long - request count", responseContainer = "Map", httpMethod = "GET",
@@ -105,7 +108,12 @@ public class ApplicationRestController {
     @RequestMapping(value = "statistic/{accountId}", method = RequestMethod.GET)
     public Map<String, Long> statistic(
             @ApiParam("Registered User account id")
-            @PathVariable("accountId") String accountId) {
+            @PathVariable("accountId") String accountId, Principal principal) {
+
+        if(!Objects.equals(principal.getName(), accountId)) {
+            throw new AccessDeniedException("You can view only your own statistics");
+        }
+
         return linkService.getStatistic(accountId);
     }
 
