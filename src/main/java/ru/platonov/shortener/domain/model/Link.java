@@ -93,15 +93,4 @@ public class Link implements Serializable {
         this.account = account;
     }
 
-    @Override
-    public String toString() {
-        return "Link{" +
-                "shortUrlPart='" + shortUrlPart + '\'' +
-                ", url='" + url + '\'' +
-                ", redirectType=" + redirectType +
-                ", redirectsAmount=" + redirectsAmount +
-                ", version=" + version +
-                ", account=" + account +
-                '}';
-    }
 }
