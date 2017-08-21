@@ -35,15 +35,6 @@ public class UnitTests {
     }
 
     @Test
-    public void should_objectsLinksEquals_when_objectsIdsEquals() {
-        assertTrue(
-                Objects.equals(
-                        Link.builder().id(1L).build(),
-                        Link.builder().id(1L).build())
-        );
-    }
-
-    @Test
     public void should_returnAccount_when_accountSet() {
         Link test = Link.builder().account(Account.builder().id("test").build()).build();
 

@@ -5,7 +5,7 @@
 
 	<groupId>ru.platonov</groupId>
 	<artifactId>shortener</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>shortener</name>

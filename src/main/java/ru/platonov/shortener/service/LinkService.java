@@ -1,6 +1,5 @@
 package ru.platonov.shortener.service;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -33,10 +32,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class LinkService {
-
-    private static final int MIN_COUNT = 6; //maximum 20358520 combinations
-
-    private static final int MAX_RETRY_COUNT = 100;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -72,13 +67,12 @@ public class LinkService {
             Link savedLink = linkByUrlAndAccountId.get();
 
             return RegisterLinkResult.builder()
-                    .shortUrl(getFullUrl(savedLink.getShortUrl()))
+                    .shortUrl(getFullUrl(savedLink.getShortUrlPart()))
                     .build();
         }
 
         Link link = Link.builder()
                 .url(trimmedUrl)
-                .shortUrl(createShortUrl())
                 .redirectType(linkRequest.getRedirectType())
                 .account(account)
                 .build();
@@ -86,23 +80,8 @@ public class LinkService {
         Link savedLink = linkRepository.save(link);
 
         return RegisterLinkResult.builder()
-                .shortUrl(getFullUrl(savedLink.getShortUrl()))
+                .shortUrl(getFullUrl(savedLink.getShortUrlPart()))
                 .build();
-    }
-
-    private String createShortUrl(){
-        String generatedUrl;
-        int retry = 0;
-
-        do {
-            if(retry >= MAX_RETRY_COUNT) {
-                throw new IllegalStateException("Maximum retry reached!");
-            }
-            retry ++;
-            generatedUrl = RandomStringUtils.randomAlphabetic(MIN_COUNT);
-        } while (linkRepository.findLinkByShortUrl(generatedUrl).isPresent());
-
-        return generatedUrl;
     }
 
     private String getFullUrl(String generatedPath) {
@@ -141,6 +120,8 @@ public class LinkService {
 
     /**
      * Get real link by short link
+     * Even if someone has already changed the object before saving, then this should not affect the user in any way.
+     * Therefore, the retention attempt will be repeated
      *
      * @param shortLink associated short link
      * @return real link
@@ -148,7 +129,7 @@ public class LinkService {
     @Transactional(propagation = Propagation.NEVER)
     @RetryConcurrentOperation(exception = ObjectOptimisticLockingFailureException.class, retries = 3)
     public Optional<Link> getRealLink(String shortLink) {
-        Optional<Link> link = linkRepository.findLinkByShortUrl(shortLink);
+        Optional<Link> link = linkRepository.findLinkByShortUrlPart(shortLink);
 
         link.ifPresent(
                 linkInner -> {

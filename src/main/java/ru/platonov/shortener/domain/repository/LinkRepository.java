@@ -16,7 +16,7 @@ import java.util.Optional;
  * @since 15.08.2017
  */
 @Repository
-public interface LinkRepository extends CrudRepository<Link, Long>{
+public interface LinkRepository extends CrudRepository<Link, String>{
 
     /**
      * Get link by its short link
@@ -24,7 +24,7 @@ public interface LinkRepository extends CrudRepository<Link, Long>{
      * @param shortUrl - short link
      * @return saved real link
      */
-    Optional<Link> findLinkByShortUrl(String shortUrl);
+    Optional<Link> findLinkByShortUrlPart(String shortUrl);
 
     /**
      * Get link associated with specified account by real link
